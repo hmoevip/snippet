@@ -1,0 +1,15 @@
+QString filename;
+QFileDialog* file = new QFileDialog(this);//创建对话框
+file->setWindowTitle(tr("Open Image"));
+file->setDirectory(".");   //设置当前目录,在Mac下没用
+file->resize(240,320);    //设置显示的大小
+file->setFilter( "Allfile(*.*);;mp3file(*.mp3);;wmafile(*.wma);;wavefile(*.wav)"); //设置文件过滤器
+file->setViewMode(QFileDialog::List);  //设置浏览模式，有 列表（list） 模式和 详细信息（detail）两种方式
+file->setFileMode( QFileDialog::ExistingFile ); //设置返回内容，一个文件，多个文件，文件夹等
+if ( file->exec() == QDialog::Accepted )   //如果成功的执行
+{
+filename = file->selectedFiles()[0];      //返回文件列表的名称
+QMessageBox::information(NULL, tr("Path"), tr("You selected ") + filename);
+}
+else
+fd->close();
