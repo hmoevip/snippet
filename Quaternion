@@ -1,0 +1,163 @@
+//绕xyz轴的旋转弧度
+float xRot;
+float yRot;
+float zRot;
+//模拟球半径
+int r;
+//记录旋转向量
+MyPoint vet;
+//四元数和旋转量
+MyPoint q;
+float qc;
+//旋转的累加，四元数的乘法运算
+void Quaternion(MyPoint v,float a);
+//向量单位化
+MyPoint Normal(MyPoint in);
+
+
+//初始化
+  xRot=0;
+yRot=0;
+zRot=0;
+q.x=0;
+q.y=0;
+q.z=0;
+r = centerX<centerY ? centerX:centerY;
+qc=1.0;
+
+/*鼠标按下时，会得到一个vet，之后移动过程中，时刻用新计算出的vet与之比较求旋转*/
+void GLWidget::mousePressEvent(QMouseEvent *event)
+{
+if(event->button() == Qt::LeftButton)
+{
+if(event->x()<(3*mywidth/4) && event->y()<myheight)   //鼠标在操作区域内
+  flag_in = true;
+if(flag_in)
+{
+    int a = event->x()-centerX;         //鼠标点下位置距离原点x轴距离
+    int b = event->y()-centerY;         //鼠标点下位置距离原点y轴距离
+    int c = a*a+b*b;                    //鼠标点下位置距离原点距离的平方
+    if(c>=r*r)          //如果距离比虚拟球半径大，则旋转向量为
+       {
+    vet.x = a*r/sqrt(c);
+     vet.y = b*r/sqrt(c);
+     vet.z = 0;
+       }else if(c<r*r)//否则旋转向量为
+       {
+     vet.x = a;
+     vet.y = b;
+     vet.z = sqrt(r*r-c);
+       }
+vet = Normal(vet);    //单位化
+}
+}
+}
+
+
+void GLWidget::mouseMoveEvent(QMouseEvent *event)       //鼠标拖动
+{
+if(flag_in)
+{
+MyPoint new_vet;
+MyPoint new_rot;
+float temp;
+double temp1,temp2,temp3;
+    int a = event->x()-centerX;              //时刻记录鼠标位置与原点位置间的如下关系
+int b = event->y()-centerY;
+int c = a*a+b*b;
+if(c>=r*r)               //计算新的旋转向量
+{
+               new_vet.x = a*r/sqrt(c);
+   new_vet.y = b*r/sqrt(c);
+   new_vet.z = 0;
+}else if(c<r*r)
+{
+   new_vet.x = a;
+   new_vet.y = b;
+   new_vet.z = sqrt(r*r-c);
+}
+new_vet = Normal(new_vet);
+
+temp1 = (new_vet.x-vet.x)*(new_vet.x-vet.x);
+temp2 = (new_vet.y-vet.y)*(new_vet.y-vet.y);
+temp3 = (new_vet.z-vet.z)*(new_vet.z-vet.z);
+temp = sqrt(temp1+temp2+temp3);       //向量差的模长
+
+new_rot.x = vet.y*new_vet.z-new_vet.y*vet.z;      //两向量叉乘
+new_rot.y = vet.z*new_vet.x-new_vet.z*vet.x;
+new_rot.z = vet.x*new_vet.y-new_vet.x*vet.y;
+
+vet = new_vet;
+
+    if (event->buttons() & Qt::LeftButton) {
+  Quaternion(new_rot,temp);          //以向量的差为旋转量，两向量叉乘为旋转轴
+  updateGL();
+  }
+}
+}
+
+
+void GLWidget::mouseReleaseEvent(QMouseEvent *event)    //鼠标松开
+{
+
+if(event->button() == Qt::LeftButton)
+{
+flag_in = false;
+}
+}
+
+void GLWidget::wheelEvent(QWheelEvent *event)      //鼠标中轮放缩
+{
+if(event->x()<(3*mywidth/4) && event->y()<myheight)
+{
+scale = scale +  0.05 * event->delta() / 120;
+if(scale<=0)
+  scale = 0;
+updateGL();
+}
+}
+
+/*   四元数计算旋转
+*    输入参数v是旋转轴
+*    输入参数a是旋转角度
+*/
+void GLWidget::Quaternion(MyPoint v,float a)
+{
+//float norm;
+MyPoint u;
+float b,t;
+u = q;
+b = qc;
+t = cos(a/2);
+    v = Normal(v);
+
+v.x = v.x*sin(a/2);
+v.y = v.y*sin(a/2);
+v.z = v.z*sin(a/2);
+
+qc = b*t-v.x*u.x-v.y*u.y-v.z*u.z;          //qc和q是积累量，所以用全局量了，可以优化
+q.x = t*u.x+b*v.x-u.y*v.z+v.y*u.z;
+q.y = t*u.y+b*v.y-u.z*v.x+v.z*u.x;
+q.z = t*u.z+b*v.z-u.x*v.y+v.x*u.y;
+
+xRot = atan2(2*(qc*q.x+q.y*q.z),1-2*(q.x*q.x+q.y*q.y));     //计算出的旋转角度
+yRot = asin(2*(qc*q.y-q.x*q.z));
+zRot = atan2(2*(qc*q.z+q.x*q.y),1-2*(q.y*q.y+q.z*q.z));
+
+
+}
+
+MyPoint GLWidget::Normal(MyPoint in)
+{
+float norm;
+MyPoint v;
+v = in;
+norm = sqrt((v.x)*(v.x)+(v.y)*(v.y)+(v.z)*(v.z));
+if(norm>0)
+{
+v.x = v.x/norm;
+v.y = v.y/norm;
+v.z = v.z/norm;
+}
+return v;
+}
