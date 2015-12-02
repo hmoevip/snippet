@@ -1,0 +1,55 @@
+//声明
+void myMultiple(double **A, double *V, int line, int row);
+
+//定义
+void myMultiple(double **A, double *V, int line, int row)
+{
+	double flg = 1;
+	double *tmp = (double *)malloc(sizeof(double)*row);
+	while(flg != 0)
+	{
+		flg = 0;
+		for(int i=0; i<row; ++i)
+			tmp[i] = 0;
+
+		for(int i=0; i<line; ++i)
+			for(int j=0; j<row; ++j)
+				tmp[i] += A[i][j]*V[j];
+
+		for(int i=0; i<row; ++i)
+			V[i] = tmp[i];
+
+		flg = V[0];
+
+		for(int i=1; i<row; ++i)
+			if(fabs(V[i]) > fabs(flg))
+				flg = V[i];
+
+		for(int i=0; i<row; ++i)
+			V[i] /= flg;
+	}
+}
+
+
+//使用方法
+    double **A,*V;
+	A = (double **)malloc(sizeof(double *)*3);
+    V = (double *)malloc(sizeof(double)*3);
+    for(int i=0;i<3;i++)
+        A[i] = (double *)malloc(sizeof(double)*3);
+
+	A[0][0] = 1;// M.a;
+	A[0][1] = 1;//M.b;
+	A[0][2] = 0.5;//M.c;
+
+	A[1][0] = 1;//M.d;
+	A[1][1] = 1;//M.e;
+	A[1][2] = 0.25;//M.f;
+
+	A[2][0] = 0.5;//M.g;
+	A[2][1] = 0.25;//M.h;
+	A[2][2] = 2;//M.i;
+
+    for(int i=0;i<3;i++)
+        V[i] = 1;
+    myMultiple(A,V,3,3);
